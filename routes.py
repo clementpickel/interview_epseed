@@ -109,7 +109,7 @@ def user_routes(app):
                 return jsonify({'error': 'Missing data'}), 400
 
     @app.route('/user', methods=['DELETE'])
-    @jwt_required()  # L'utilisateur doit être authentifié pour supprimer son propre compte
+    @jwt_required()
     def delete_user():
         """
     Delete the connected user.
@@ -302,7 +302,7 @@ def note_routes(app):
             return jsonify({'error': 'Note not found or does not belong to the current user'}), 404
 
     @app.route('/note', methods=['DELETE'])
-    @jwt_required()  # L'utilisateur doit être authentifié pour supprimer une note
+    @jwt_required()
     def delete_note():
         """
     Delete a note.
