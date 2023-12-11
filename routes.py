@@ -1,4 +1,4 @@
-from app import app, db, bcrypt, jwt
+from app import db, bcrypt
 from flask import jsonify, request
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from models import User, Note
@@ -6,6 +6,38 @@ from models import User, Note
 def user_routes(app):
     @app.route('/register', methods=['POST'])
     def register():
+        """
+    Register a new user.
+
+    ---
+    tags:
+      - Authentication
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          id: UserRegister
+          required:
+            - username
+            - email
+            - password
+          properties:
+            username:
+              type: string
+              description: Username for registration.
+            email:
+              type: string
+              description: Email address for registration.
+            password:
+              type: string
+              description: Password for registration.
+    responses:
+      201:
+        description: User registered successfully.
+      400:
+        description: Missing data in the request.
+    """
         if request.method == 'POST':
             data = request.json
 
@@ -29,6 +61,34 @@ def user_routes(app):
 
     @app.route('/login', methods=['POST'])
     def login():
+        """
+    Connect a user
+
+    ---
+    tags:
+      - Authentication
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          id: UserLogin
+          required:
+            - email
+            - password
+          properties:
+            email:
+              type: string
+              description: Email address for registration.
+            password:
+              type: string
+              description: Password for registration.
+    responses:
+      201:
+        description: User registered successfully.
+      400:
+        description: Missing data in the request.
+    """
         if request.method == 'POST':
             data = request.json
             email = data.get('email')
@@ -47,10 +107,27 @@ def user_routes(app):
                     return jsonify({'error': 'Invalid username or password'}), 401
             else:
                 return jsonify({'error': 'Missing data'}), 400
-            
+
     @app.route('/user', methods=['DELETE'])
     @jwt_required()  # L'utilisateur doit être authentifié pour supprimer son propre compte
     def delete_user():
+        """
+    Delete the connected user.
+
+    ---
+    tags:
+      - Authentication
+    security:
+      - jwt_token: []
+
+    responses:
+      200:
+        description: User deleted successfully.
+      401:
+        description: Unauthorized - Invalid or missing JWT token.
+      404:
+        description: User not found.
+    """
         current_user = get_jwt_identity()
         user = User.query.filter_by(id=current_user['id']).first()
 
@@ -70,6 +147,38 @@ def note_routes(app):
     @app.route('/note', methods=['POST'])
     @jwt_required()
     def create_note():
+        """
+    Create a new note.
+
+    ---
+    tags:
+      - Notes
+    security:
+      - jwt_token: []
+
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          id: Note
+          required:
+            - title
+            - content
+          properties:
+            title:
+              type: string
+              description: Title of the note.
+            content:
+              type: string
+              description: Content of the note.
+
+    responses:
+      201:
+        description: Note created successfully.
+      400:
+        description: Missing data in the request.
+    """
         current_user = get_jwt_identity()
         data = request.json
 
@@ -91,6 +200,28 @@ def note_routes(app):
     @app.route('/note', methods=['GET'])
     @jwt_required()
     def get_notes():
+        """
+    Get all notes of the authenticated user.
+
+    ---
+    tags:
+      - Notes
+    security:
+      - jwt_token: []
+
+    responses:
+      200:
+        description: List of notes retrieved successfully.
+        schema:
+          type: object
+          properties:
+            notes:
+              type: array
+              items:
+                $ref: '#/definitions/Note'
+      401:
+        description: Unauthorized - Invalid or missing JWT token.
+        """
         current_user = get_jwt_identity()
         user_notes = Note.query.filter_by(user_id=current_user['id']).all()
 
@@ -109,6 +240,42 @@ def note_routes(app):
     @app.route('/note', methods=['PUT'])
     @jwt_required() 
     def update_note():
+        """
+    Update an existing note.
+
+    ---
+    tags:
+      - Notes
+    security:
+      - jwt_token: []
+
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          id: NoteUpdate
+          required:
+            - note_id
+          properties:
+            note_id:
+              type: integer
+              description: ID of the note to be updated.
+            title:
+              type: string
+              description: New title of the note (optional).
+            content:
+              type: string
+              description: New content of the note (optional).
+
+    responses:
+      200:
+        description: Note updated successfully.
+      400:
+        description: Missing data in the request.
+      404:
+        description: Note not found or does not belong to the current user.
+    """
         current_user = get_jwt_identity()
         data = request.json
 
@@ -137,6 +304,36 @@ def note_routes(app):
     @app.route('/note', methods=['DELETE'])
     @jwt_required()  # L'utilisateur doit être authentifié pour supprimer une note
     def delete_note():
+        """
+    Delete a note.
+
+    ---
+    tags:
+      - Notes
+    security:
+      - jwt_token: []
+
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          id: NoteDelete
+          required:
+            - note_id
+          properties:
+            note_id:
+              type: integer
+              description: ID of the note to be deleted.
+
+    responses:
+      200:
+        description: Note deleted successfully.
+      401:
+        description: Unauthorized - Invalid or missing JWT token.
+      404:
+        description: Note not found or does not belong to the current user.
+    """
         current_user = get_jwt_identity()
 
         data = request.json
